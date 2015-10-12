@@ -1,19 +1,21 @@
 FROM phusion/baseimage:0.9.16
 MAINTAINER Ahmad Iqbal <ahmad@aurorasolutions.io>
 
-# Install Oracle Java 7
-ENV JAVA_VER 7
-ENV JAVA_HOME /usr/lib/jvm/java-7-oracle
-
 CMD ["/sbin/my_init"]
 
-RUN echo 'deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main' >> /etc/apt/sources.list && \
-    echo 'deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main' >> /etc/apt/sources.list && \
-    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys C2518248EEA14886 && \
-    apt-get update && \
-    echo oracle-java${JAVA_VER}-installer shared/accepted-oracle-license-v1-1 select true | sudo /usr/bin/debconf-set-selections && \
-    apt-get install -y --force-yes --no-install-recommends oracle-java${JAVA_VER}-installer oracle-java${JAVA_VER}-set-default && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists && \
-    rm -rf /var/cache/oracle-jdk${JAVA_VER}-installer
+ENV java_version 1.8.0_25
+ENV filename jdk-8u25-linux-x64.tar.gz
+ENV downloadlink http://download.oracle.com/otn-pub/java/jdk/8u25-b17/$filename -O /tmp/$filename
+ENV JAVA_HOME /usr/lib/jvm/jdk$java_version
+ENV PATH $JAVA_HOME/bin:$PATH
 
+# Download Install utilities
+RUN apt-get update && apt-get install -y unzip wget && apt-get clean
+
+#Download java
+RUN wget --no-cookies --header "Cookie: oraclelicense=accept-securebackup-cookie" $downloadlink -O /tmp/$filename
+RUN mkdir /usr/lib/jvm && tar -zxf /tmp/$filename -C /usr/lib/jvm/
+RUN update-alternatives --install /usr/bin/java java $JAVA_HOME/bin/java 20000 && update-alternatives --install /usr/bin/javac javac $JAVA_HOME/bin/javac 20000
+
+# Clean up APT.
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
